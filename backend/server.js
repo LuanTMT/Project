@@ -13,9 +13,20 @@ const paymentRouter = require('./router/payment.router');
 const orderRouter = require('./router/order.router');
 const orderDetailRouter = require('./router/orderDetail.router');
 const swaggerUI = require('swagger-ui-express');
-const swaggerFile = require('./swagger-output.json')
+const swaggerFile = require('./swagger-output.json');
+const stripeRouter = require('./router/stripe.router');
 const PORT = process.env.PORT || 5000;
 
+//stripe  
+  app.use(
+    express.json({         
+      verify: function (req, res, buf) {
+        if (req.originalUrl.startsWith('/webhook')) {
+          req.rawBody = buf.toString();
+        }
+      },
+    })
+  );
 app.use(cors());
 
 // parse application/x-www-form-urlencoded
@@ -30,6 +41,8 @@ app.use("/public/images", express.static(__dirname + "/public/images"));
 
 app.use(upload.single("image"));
 
+app.use("/", stripeRouter)
+
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/categories", categoryRouter);
@@ -39,6 +52,7 @@ app.use("/api/v1/orders", orderRouter);
 app.use('/api/v1/account', accountRouter)
 app.use("/api/v1/carts",cartRouter);
 app.use("/api/v1/orderDetail", orderDetailRouter);
+
 
 app.listen( PORT, () => {
     console.log(`Server is running on port ${PORT}....\nAPI documentation: http://127.0.0.1:5000/api-doc`);

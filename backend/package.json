@@ -1,8 +1,8 @@
 {
-  "name": "node",
+  "name": "nodejs_project_full",
   "version": "1.0.0",
-  "description": "- This is a server system to provide RESTfuls API to data processing and connect with database and UI. NodeJS is used with framework Express to create a server of website:\r   - Create models with sequelize.\r   - Create API to get, post, put, delete users, products, categories, carts, orders, orderDetais, payments. Pagination sever-side.\r   - Create middleware to check data and help code cleaner",
-  "main": "index.js",
+  "description": "",
+  "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"

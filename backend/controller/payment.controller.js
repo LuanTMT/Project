@@ -7,14 +7,14 @@ const CartModel = db.Cart;
 const PaymentModel = db.Payment;
 
 const addNewPayment = async (req, res) => {
-    const {fullName, phone, address, email, listItems, totalBill,idUser, method} = req.body;
+    const { fullName, phone, address, email, listItems, totalBill, idUser, method } = req.body;
 
     const t = await db.sequelize.transaction();
 
     try {
 
         // update infomation of user
-        await UserModel.update({fullName:fullName,phone:phone,address:address},{
+        await UserModel.update({ fullName: fullName, phone: phone, address: address }, {
             where: {
                 id: idUser,
             },
@@ -23,7 +23,7 @@ const addNewPayment = async (req, res) => {
         // create order
         const createdOrder = await OrderModel.create(
             {
-            userId: idUser,
+                userId: idUser,
             },
             { transaction: t }
         )
@@ -42,7 +42,7 @@ const addNewPayment = async (req, res) => {
             deletedCartIds.push(item.cartId)
         });
 
-        await OrderDetailModel.bulkCreate(orderDetailBulkData, {transaction: t});
+        await OrderDetailModel.bulkCreate(orderDetailBulkData, { transaction: t });
 
         // create payment
         const createdPayment = await PaymentModel.create({
@@ -50,7 +50,7 @@ const addNewPayment = async (req, res) => {
             orderId: createdOrder.id,
             total: totalBill
         },
-        { transaction: t }
+            { transaction: t }
         )
 
         // delete all Cart item after done
@@ -69,17 +69,17 @@ const addNewPayment = async (req, res) => {
             `${email}`,
             'SUCCESSFULLY CHECKOUT!',
             `Thank you for ordering at our shop!
-Payment Details:
+            Payment Details:
 
-########################################################
-PaymentID: ${createdPayment.id}
-Payment Method: ${createdPayment.method}
-Paid: ${createdPayment.total} VND
-########################################################
+        ########################################################
+        PaymentID: ${createdPayment.id}
+        Payment Method: ${createdPayment.method}
+        Paid: ${createdPayment.total} VND
+        ########################################################
 
-Good luck and have fun!
-Men Fashion Shop`
-)
+        Good luck and have fun!
+        Men Fashion Shop`
+        )
 
         return res.status(201).json({
             createdPayment
@@ -87,7 +87,7 @@ Men Fashion Shop`
 
     } catch (error) {
         await t.rollback();
-        return res.status(500).json({message: "loi me roi"})
+        return res.status(500).json({ message: "Error" })
     }
 }
 
@@ -101,13 +101,13 @@ const getPayment = async (req, res) => {
             }
         })
 
-        if(!payment) {
-            return res.status(404).json({message: "Not found payment"})
+        if (!payment) {
+            return res.status(404).json({ message: "Not found payment" })
         }
 
         return res.status(200).json(payment)
     } catch (error) {
-        return res.status(500).json({message: error.message})
+        return res.status(500).json({ message: error.message })
     }
 }
 
