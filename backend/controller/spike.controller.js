@@ -20,8 +20,8 @@ const getConfig = (req, res) => {
         publishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
     });
 }
-const creatPayment = async (req, res) => {
-    const { paymentMethodType, currency, amount, listItems } = req.body;
+const creatPayment = async (req, res, next) => {
+    const { paymentMethodType, currency, amount, listItems, email, idUser } = req.body;
 
     // Each payment method type has support for different currencies. In order to
     // support many payment method types and several currencies, this server
@@ -42,42 +42,14 @@ const creatPayment = async (req, res) => {
     // [0] https://stripe.com/docs/api/payment_intents/create
     try {
         const paymentIntent = await stripe.paymentIntents.create(params);
-
+        console.log(paymentIntent.client_secret  )
         // Send publishable key and PaymentIntent details to client
         res.send({
             clientSecret: paymentIntent.client_secret,
             nextAction: paymentIntent.next_action,
         });
-
-        // // contunied sending email
-        // await EmailService(
-        //     `${email}`,
-        //     'SUCCESSFULLY CHECKOUT!',
-        //     `Thank you for ordering at our shop!
-        //     Payment Details:
-
-        // ########################################################
-        // PaymentID: ${createdPayment.id}
-        // Payment Method: ${createdPayment.method}
-        // Paid: ${createdPayment.total} VND
-        // ########################################################
-
-        // Good luck and have fun!
-        // Men Fashion Shop`
-        // )       
-        const deletedCartIds = [];
-
-        listItems.forEach((item) => {
-            deletedCartIds.push(item.cartId)
-        });
-
-        // delete all Cart item after done
-        await CartModel.destroy(
-            {
-                where: { id: deletedCartIds }
-            })
+        next()
     } catch (e) {
-
         return res.status(400).send({
             error: {
                 message: e.message,
@@ -86,4 +58,78 @@ const creatPayment = async (req, res) => {
     }
 }
 
-module.exports = { getConfig, creatPayment }
+const payment = async(req,res)=>{
+    const { paymentMethodType,amount, listItems, email, idUser } = req.body;
+
+    //transaction
+    const t = await db.sequelize.transaction();
+    try {
+             // create order
+             const createdOrder = await OrderModel.create(
+                {
+                    userId: idUser,
+                },
+                { transaction: t }
+            )
+            // create list of orderdetail and list of deletedCartIds
+            const orderDetailBulkData = [];
+            const deletedCartIds = [];
+    
+            listItems.forEach((item) => {
+                orderDetailBulkData.push({
+                    orderId: createdOrder.id,
+                    productId: item.productId,
+                    quantityProduct: item.qty
+                });
+                deletedCartIds.push(item.cartId)
+            });
+    
+            await OrderDetailModel.bulkCreate(orderDetailBulkData, { transaction: t });
+    
+            // create payment
+            const total = (amount / 100);
+            const createdPayment = await PaymentModel.create({
+                method: paymentMethodType,
+                orderId: createdOrder.id,
+                total: total,
+            },
+                { transaction: t })
+    
+    
+            // delete all Cart item after done
+            await CartModel.destroy(
+                {
+                    where: { id: deletedCartIds }
+                },
+                { transaction: t })
+            await t.commit()
+    
+            // contunied sending email
+            await EmailService(
+                `${email}`,
+                'SUCCESSFULLY CHECKOUT!',
+                `Thank you for ordering at our shop!
+                Payment Details:
+    
+            ########################################################
+            PaymentID: ${createdPayment.id}
+            Payment Method: ${paymentMethodType}
+            Paid: ${amount} USD
+            ########################################################
+    
+            Good luck and have fun!
+            Men Fashion Shop`
+            )
+    
+            
+    
+    } catch (error) {
+        await t.rollback();
+        return res.status(400).send({
+            error: {
+                message: e.message,
+            },
+        });
+    }
+}
+module.exports = { getConfig, creatPayment, payment }
