@@ -16,18 +16,13 @@ const swaggerUI = require('swagger-ui-express');
 const swaggerFile = require('./swagger-output.json');
 const stripeRouter = require('./router/stripe.router');
 const PORT = process.env.PORT || 5000;
+//social login
+const cookieSession = require("cookie-session");
+const passportSetup = require("./service/passport");
+const passport = require("passport");
+const googleRoute = require("./router/google.router");
 
-//stripe  
-  app.use(
-    express.json({         
-      verify: function (req, res, buf) {
-        if (req.originalUrl.startsWith('/webhook')) {
-          req.rawBody = buf.toString();
-        }
-      },
-    })
-  );
-app.use(cors());
+
 
 // parse application/x-www-form-urlencoded
 app.use( bodyParser.urlencoded({ extended: false }) );
@@ -41,7 +36,36 @@ app.use("/public/images", express.static(__dirname + "/public/images"));
 
 app.use(upload.single("image"));
 
+
+
+app.use(
+  cookieSession({ name: "session", keys:['luma'], maxAge: 24 * 60 * 60 * 100 })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+//stripe  
+  app.use(
+    express.json({         
+      verify: function (req, res, buf) {
+        if (req.originalUrl.startsWith('/webhook')) {
+          req.rawBody = buf.toString();
+        }
+      },
+    })
+  );
+app.use(  cors({
+  origin: "http://localhost:3000",
+  methods: "GET,POST,PUT,DELETE",
+  credentials: true,
+}));
+
+
+
 app.use("/", stripeRouter)
+//soial login
+app.use("/auth", googleRoute);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);

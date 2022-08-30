@@ -16,6 +16,8 @@ userRouter.delete( "/:id", verifyToken, isAdmin, deleteUser );
 
 userRouter.put('/changepass/:id', verifyToken, changePassword);
 
+userRouter.put('/profile/:id', verifyToken, editProfile);
+
 userRouter.put('/info/:id', verifyToken,  isMember, updateInfoUser);
 
 userRouter.put( "/:id", verifyToken, isAdmin, findUser, updateRole );

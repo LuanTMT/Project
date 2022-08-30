@@ -29,54 +29,80 @@ const getUserById = async (req, res) => {
       }
     });
 
-    if(!user) {
-      return res.status(404).json({message: "Not found user"})
+    if (!user) {
+      return res.status(404).json({ message: "Not found user" })
     }
 
     return res.status(200).json(user)
   } catch (error) {
-    return res.status(500).json({message: error.message})
+    return res.status(500).json({ message: error.message })
   }
 }
 
 const changePassword = async (req, res) => {
-    const idUser = req.params.id;
-    const {currentPassword, newPassword } = req.body;
-    if (currentPassword === newPassword) {
-      return res.status(400).json({message: "New password must not be the same as old password"})
-    }
-    try {
+  const idUser = req.params.id;
+  const { currentPassword, newPassword } = req.body;
+  if (currentPassword === newPassword) {
+    return res.status(400).json({ message: "New password must not be the same as old password" })
+  }
+  try {
     const user = await UserModel.findOne({
       where: {
         id: idUser,
       }
     })
-    if(!user) {
-      return res.status(404).json({message: "User not found"})
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
     }
-    if(md5(currentPassword) !== user.hashPwd) {
-      return res.status(400).json({message: "Current password is incorrect!"})
+    if (md5(currentPassword) !== user.hashPwd) {
+      return res.status(400).json({ message: "Current password is incorrect!" })
     }
 
     const hashPwd = md5(newPassword);
 
-      await UserModel.update({hashPwd: hashPwd},{
-        where: {
-          id: idUser,
-        }
-      });
+    await UserModel.update({ hashPwd: hashPwd }, {
+      where: {
+        id: idUser,
+      }
+    });
 
-      return res.status(200).json({message: "Update password successfully!"})
-    } catch (error) {
-      return res.status(500).json({message: error.message})
+    return res.status(200).json({ message: "Update password successfully!" })
+  } catch (error) {
+    return res.status(500).json({ message: error.message })
+  }
+}
+
+const editProfile = async (req, res) => {
+  const idUser = req.params.id;
+  const { fullName, email, phone, address} = req.body;
+  try {
+    const user = await UserModel.findOne({
+      where: {
+        id: idUser,
+      }
+    })
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
     }
+    if (fullName === '' || email === '' || phone === '' || address === '') {
+      return res.status(400).json({ message: "Require feild all input!" })
+    }
+    await UserModel.update({fullName, email, phone, address}, {
+      where: {
+        id: idUser,
+      }
+    });
+    return res.status(200).json({ message: "Update profile successfully!" })
+  } catch (error) {
+    return res.status(500).json({ message: error.message })
+  }
 }
 
 const updateInfoUser = async (req, res) => {
   const idUser = req.params.id;
   const { fullName, phone, address } = req.body;
-  if(fullName === '' || phone === '' || address === '') {
-    return res.status(400).json({message: "Require feild all input!"})
+  if (fullName === '' || phone === '' || address === '') {
+    return res.status(400).json({ message: "Require feild all input!" })
   }
   try {
     await UserModel.findOne({
@@ -84,34 +110,34 @@ const updateInfoUser = async (req, res) => {
         id: idUser,
       }
     })
-    if(!user) {
-      return res.status(404).json({message: "Not found user!"})
+    if (!user) {
+      return res.status(404).json({ message: "Not found user!" })
     }
 
-    await UserModel.update({fullName: fullName, phone: phone, address: address},{
+    await UserModel.update({ fullName: fullName, phone: phone, address: address }, {
       where: {
         id: idUser,
       }
     })
-    
+
   } catch (error) {
-    return res.status(500).json({message: error.message})
+    return res.status(500).json({ message: error.message })
   }
 }
 
 const createUser = async (req, res) => {
-  const {   
-    username,  
+  const {
+    username,
     password,
     email,
   } = req.body
   try {
-    const createData = { 
-      username: username,   
+    const createData = {
+      username: username,
       hashPwd: md5(password),
       iamRole: PERMISSION_MEMBER,
       email: email,
-      avatar: DEFAULT_AVT, 
+      avatar: DEFAULT_AVT,
     };
     await UserModel.create(createData);
     return res.status(201).json({
@@ -126,41 +152,41 @@ const createUser = async (req, res) => {
   }
 }
 
-const deleteUser =  async (req, res) => {
+const deleteUser = async (req, res) => {
 
-  const {id} = req.params;
+  const { id } = req.params;
   try {
-      await UserModel.destroy({
-          where: {
-            id: id,
-          }
-      });
-      return res.status(200).json({message: "Delete User Successfully!"})
+    await UserModel.destroy({
+      where: {
+        id: id,
+      }
+    });
+    return res.status(200).json({ message: "Delete User Successfully!" })
   } catch (error) {
-      return res.status(500).json({message: error.message})
+    return res.status(500).json({ message: error.message })
   }
 };
 
 const updateRole = async (req, res) => {
-  const {id} = req.params;
-  const {iamRole} = req.body;
+  const { id } = req.params;
+  const { iamRole } = req.body;
   try {
-      await UserModel.update(
-          {iamRole:iamRole},{
-              where: {
-                  id: id,
-               }   
-          });
+    await UserModel.update(
+      { iamRole: iamRole }, {
+      where: {
+        id: id,
+      }
+    });
 
-      return res.status(200).json({ message: "Update Role Successfully!" })
+    return res.status(200).json({ message: "Update Role Successfully!" })
   } catch (error) {
-      return res.status(500).json({message: error.message})
+    return res.status(500).json({ message: error.message })
   }
 }
-module.exports = { 
-  getAllUser, 
-  createUser, 
-  deleteUser, 
+module.exports = {
+  getAllUser,
+  createUser,
+  deleteUser,
   updateRole,
   changePassword,
   getUserById,
